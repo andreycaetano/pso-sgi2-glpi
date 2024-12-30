@@ -1,38 +1,46 @@
-import axios, { AxiosError } from 'axios';
 import {
-  CallHandler,
-  ExecutionContext,
+  ExceptionFilter,
+  Catch,
+  ArgumentsHost,
   HttpException,
-  HttpStatus,
-  Injectable,
-  NestInterceptor,
+  Logger,
 } from '@nestjs/common';
-import { catchError, Observable } from 'rxjs';
+import { AxiosError } from 'axios';
+import { Request, Response } from 'express';
 
-@Injectable()
-export class AxiosInterceptor implements NestInterceptor {
-  intercept(
-    context: ExecutionContext,
-    next: CallHandler<any>,
-  ): Observable<any> | Promise<Observable<any>> {
-    return next.handle().pipe(
-      catchError((error) => {
-        console.log(error);
+@Catch()
+export class AllExceptionsFilter implements ExceptionFilter {
+  private readonly logger = new Logger(AllExceptionsFilter.name);
 
-        if (error.isAxiosError) {
-          const AxiosError = error as AxiosError;
+  catch(exception: unknown, host: ArgumentsHost) {
+    const ctx = host.switchToHttp();
+    const response = ctx.getResponse<Response>();
+    const request = ctx.getRequest<Request>();
 
-          throw new HttpException(
-            {
-              statusCode: AxiosError.response?.status || HttpStatus.BAD_REQUEST,
-              message: AxiosError.response?.data || 'External API error',
-              error: AxiosError.response?.statusText,
-            },
-            AxiosError.response?.status || HttpStatus.BAD_REQUEST,
-          );
-        }
-        throw error;
-      }),
+    const status =
+      exception instanceof AxiosError
+        ? exception.status
+        : 500;
+    
+        
+        
+
+    const message =
+      exception instanceof AxiosError
+        ? exception.response.data
+        : 'Internal server error';
+
+    this.logger.error(
+      `Error: ${status} | ${request.method} ${request.url} | Message: ${
+        (exception as AxiosError).response.data
+      }`
     );
+
+    response.status(status).json({
+      statusCode: status,
+      timestamp: new Date().toISOString(),
+      path: request.url,
+      message,
+    });
   }
 }
