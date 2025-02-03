@@ -25,6 +25,10 @@ export class UserService {
     };
   };
 
+  capitalizarPrimeiraLetra(str: string) {
+    return str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
+  }
+
   async create(createUserDto: CreateUserDto) {
     const headers = await this.getRequestGlpiHeaders();
     const hash = crypto.createHash('sha1');
@@ -38,8 +42,8 @@ export class UserService {
         {
           input: {
             name: createUserDto.email,
-            firstname: nomePartes[0],
-            realname: nomePartes.slice(1).join(' '),
+            firstname: this.capitalizarPrimeiraLetra(nomePartes[0]),
+            realname: nomePartes.slice(1).map(nome => this.capitalizarPrimeiraLetra(nome)).join(' '),
             password: hash.digest('hex'),
             is_active: 1
           }
