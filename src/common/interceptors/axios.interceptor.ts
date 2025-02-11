@@ -32,7 +32,7 @@ export class AllExceptionsFilter implements ExceptionFilter {
 
     this.logger.error(
       `Error: ${status} | ${request.method} ${request.url} | Message: ${
-        (exception as AxiosError).response.data
+        (exception as AxiosError).response.data || exception
       }`
     );
 
